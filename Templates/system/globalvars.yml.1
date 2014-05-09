@@ -1,0 +1,54 @@
+---
+my_domain_name:
+    home
+
+root_password_encrypted:
+    "$1PutYourEncryptedPasswordHere!"
+
+name_servers:
+    - 192.168.168.13
+    - 8.8.4.4
+
+ntp:
+    boot_server: 192.168.168.13
+    servers:
+        - 192.168.168.13
+
+admin_user:
+    name: juniper
+    uid: 2001
+    class: super-user
+    password_encrypted: "$1PutYourEncryptedPasswordHere!"
+
+space_user:
+    name: Junos-Space
+    uid: 5000
+    class: super-user
+    password_encrypted: "$1PutYourEncryptedPasswordHere!"
+
+local_services:
+    - ssh
+    - netconf_ssh
+
+syslog:
+    loggers:
+        - type: user
+          name: "*"
+          fac_sev:
+              - "any emergency"
+        - type: file
+          name: messages
+          fac_sev:
+              - "any notice"
+              - "authorization info"
+        - type: file
+          name: interactive-commands
+          fac_sev:
+              - "interactive-commands any"
+        - type: host
+          name_ip: 192.168.100.110
+          log_prefix: Firewall-SRX210
+          fac_sev:
+              - "any info"
+    file_size: 1m
+    num_files: 10

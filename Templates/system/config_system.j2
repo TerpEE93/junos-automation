@@ -1,0 +1,61 @@
+system {
+    host-name {{ my_host_name }};
+    domain-name {{ my_domain_name }};
+    time-zone {{ local_timezone }};
+    root-authentication {
+        encrypted-password {{ root_password_encrypted }};
+    }
+    name-server {
+{%- for server in name_servers %}
+        {{ server }};
+{%- endfor %}
+    }
+    login {
+{%- for user in admin_user %}
+        user {{ user.name }} {
+            uid {{ user.uid }};
+            class {{ user.class }};
+            authentication {
+                encrypted-password {{ user.password_encrypted }};
+            }
+        }
+{%- endfor %}
+    }
+    services {
+{%- for service in local_services %}
+    {%- if service == 'netconf_ssh' %}
+        netconf {
+            ssh;
+        }
+    {%- else %}
+        {{ service }};
+    {%- endif %}
+{%- endfor %}
+    }
+    syslog {
+{%- for logger in syslog.loggers %}
+    {%- if logger.type == 'user' %}
+        user {{ logger.name }} {
+    {%- elif logger.type == 'file' %}
+        file {{ logger.name }} {
+    {%- elif logger.type == 'host' %}
+        host {{ logger.name_ip }} {
+            log-prefix {{ logger.log_prefix }};
+    {%- endif %}
+    {%- for facility in logger.fac_sev %}
+            {{ facility }};
+    {%- endfor %}
+        }
+{%- endfor %}
+        archive size {{ syslog.file_size }} files {{ syslog.num_files }};
+        source-address {{ syslog.source_ip }};
+    }
+    ntp {
+        boot-server {{ ntp.boot_server }};
+{%- for server in ntp.servers %}
+        server {{ server }};
+{%- endfor %}
+        source-address {{ ntp.source_ip }};
+    }
+}
+
