@@ -1,0 +1,36 @@
+event-options {
+    generate-event {
+        portEnableMonday time-of-day "12:00:00 +0000";
+        portDisableFriday time-of-day "22:00:00 +0000";
+    }
+    policy EN_ge-0/0/2 {
+        events portEnableMonday;
+        then {
+            event-script dis-ena-ifd.slax {
+                arguments {
+                	act-on Mon
+                    interface ge-0/0/2;
+                    enable 1;
+                    log-to-syslog 1;
+                }
+            }
+        }
+    }
+    policy DIS_ge-0/0/2 {
+        events portDisableFriday;
+        then {
+            event-script dis-ena-ifd.slax {
+                arguments {
+                	act-on Fri
+                    interface ge-0/0/2;
+                    enable 0;
+                    log-to-syslog 1;
+                }
+            }
+        }
+    }
+    event-script {
+        file dis-ena-ifd.slax;
+    }
+}
+

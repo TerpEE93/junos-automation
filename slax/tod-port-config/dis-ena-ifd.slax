@@ -1,0 +1,274 @@
+/*
+ * Script to disable an interface in response to a system event
+ *
+ * This script by default tries to deactive interface 'ge-0/0/2'
+ *
+ * (i.e) Commit the following configuration
+ *         "set interfaces ge-0/0/2 disable"
+ *
+ * Parameters: $interface -> Interface to disable
+ *             $log-to-syslog -> Decides where the output will go.
+ *                          0 -> (Default) Output to stdout
+ *                          1 -> Output to syslog
+ *
+ * Same script can be triggered from event-policy configuration to deactivate
+ * an interface on some specific conditions.
+ *
+ *
+ */
+
+version 1.0;
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+
+import "../import/junos.xsl";
+
+/* Set up some basic defaults for Junos config - event-script arguments... */
+param $act-on = NULL;
+param $interface = NULL;
+param $enable = 1;
+param $log-to-syslog = 1;
+
+/* ...and here we set up the arguments. */
+var $arguments = {
+    <agrument> {
+        <name> "act-on";
+        <description> "On what day(s) does this action happen? Can be single day (Mon, Tue, Wed...), weekdays, weekends, or all.";
+    }
+    <argument> {
+	    <name> "interface";
+	    <description> "Interface to deactivate";
+    }
+    <argument> {
+	    <name> "enable";
+	    <description> "Decides if we enable or disable the interface, 0 -> disable, 1 -> enable";
+    }
+    <argument> {
+	    <name> "log-to-syslog";
+	    <description> "Decides where the output will go, 0 -> stdout, 1 -> syslog";
+    }
+}
+
+/* Check to see if the target interface is already disabled */
+var $is-disabled = { call check-config(); }
+
+/* Generate any XML we need for the config change */
+var $xml = { call generate-xml(); }
+
+/* Valid act-on days */
+var $all = "all";
+var $weekdays = "weekdays";
+var $weekends = "weekends";
+var $sun = "Sun";
+var $mon = "Mon";
+var $tue = "Tue";
+var $wed = "Wed";
+var $thu = "Thu";
+var $fri = "Fri";
+var $sat = "Sat";
+
+match / {
+
+    /* Do we need to act today? */
+    var $today = { call get-day-of-week(); }
+
+    if (($act-on == $today) or ($act-on == $all)) {
+        call modify-config($xml);
+    }
+    else if  (($act-on == $weekdays) and (
+              ($today == $mon) or
+              ($today == $tue) or
+              ($today == $wed) or
+              ($today == $thu) or
+              ($today == $fri)))
+        {
+            call modify-config($xml);
+        }
+    else if  (($act-on == $weekends) and (
+              ($today == $sat) or
+              ($today == $sun)))
+        {
+            call modify-config($xml);
+        }
+    else {
+        call emit-success( $message = "Nothing to do right now!");
+    }
+
+}
+
+
+/*
+ * Templates go below
+ */
+
+template emit-success($message)
+{
+    if ($log-to-syslog == "1") {
+	expr jcs:syslog("user.info", "disable-interface.slax[Success]: ", $message);
+    } else {
+	expr jcs:output($message);
+    }
+}
+
+template emit-error($message)
+{
+    if ($log-to-syslog == "1") {
+	expr jcs:syslog("user.error", "disable-interface.slax[Error]: ", $message);
+    }
+}
+
+template emit-warn($message)
+{
+    if ($log-to-syslog == "1") {
+	expr jcs:syslog("user.warning", "disable-interface.slax[Warning]: ", $message);
+    }
+}
+
+/* get-day-of-week()
+ * Extracts the day from the output of the global variable $localtime
+ */
+template get-day-of-week() {
+    if( starts-with( $localtime, "Sun" ) ) {
+        expr $sun;
+    }
+    else if( starts-with( $localtime, "Mon" ) ) {
+        expr $mon;
+    }
+    else if( starts-with( $localtime, "Tue" ) ) {
+        expr $tue;
+    }
+    else if( starts-with( $localtime, "Wed" ) ) {
+        expr $wed;
+    }
+    else if( starts-with( $localtime, "Thu" ) ) {
+        expr $thu;
+    }
+    else if( starts-with( $localtime, "Fri" ) ) {
+        expr $fri;
+    }
+    else if( starts-with( $localtime, "Sat" ) ) {
+        expr $sat;
+    }
+    else {
+        /* Default to Monday */
+        expr $monday;
+        /* Log an error to report the problem */
+        var $message = $script _ " is unable to determine the day of the week.";
+        expr jcs:syslog( $syslog-level, $message );
+    }
+}
+
+/* check-config()
+ * Look at the port config to see if we need to make a change
+ */
+template check-config() {
+    var $get-config-rpc = <get-configuration database="committed"> {
+        <configuration> {
+            <interfaces>;
+        }
+    }
+
+    var $config = jcs:invoke( $get-config-rpc );
+    var $my-interface = $config/interfaces/interface[name=$interface];
+
+    for-each ($my-interface) {
+        if (disable) {
+            expr "1";
+        } else {
+            expr "0";
+        }
+    }
+}
+
+/* generate-xml()
+ * Create the result-tree fragment we need for the config change
+ */
+template generate-xml() {
+
+    /* If we're enabling the port, and it's currently disabled */
+    if (($enable == "1") and ($is-disabled == "1")) {
+        <configuration> {
+            <interfaces> {
+                <interface> {
+                    <name> $interface;
+                        <disable delete = "delete">;
+                }
+            }
+        }
+    }
+
+    /* If we're disabling the port, and it's currently enabled */
+    else if (($enable == "0") and ($is-disabled == "0")) {
+        <configuration> {
+            <interfaces> {
+                <interface> {
+                    <name> $interface;
+                        <disable>;
+                }
+            }
+        }
+    }
+    else {
+        expr "NULL";
+    }
+
+}
+
+
+
+/* modify-config()
+ * Here is where we write the config change
+ */
+template modify-config($mxl) {
+
+    /* Is there a change to make? */
+    if (not($xml == "NULL")) {
+
+    	/* Open connection with mgd */
+    	var $con = jcs:open();
+    	if (not($con)) {
+        	call emit-error( $message = "Can't connect to local mgd!" );
+    	}
+
+    	/* Use load-configuration() to load and commit the config change */
+    	var $results := {
+        	call jcs:load-configuration( $connection = $con, $configuration = $xml );
+    	}
+
+    	/* Emit any errors or warnings */
+    	if ($results//xnm:warning) {
+        	for-each ($results//xnm:warning) {
+            	call emit-warn( $message = message );
+        	}
+    	}
+    	else {
+        	call emit-success( $message = "Committed without warnings!" );
+    	}
+
+    	if ($results//xnm:error) {
+        	for-each ($results//xnm:error) {
+            	call emit-error( $message = message );
+        	}
+    	}
+    	else {
+        	call emit-success( $message = "Commit successful!" );
+    	}
+
+    	if (not($log-to-syslog == "1")) {
+        	<op-script-results> {
+            	copy-of $results;
+        	}
+    	}
+
+    	/* Close mgd connection */
+    	expr jcs:close($con);
+
+	}
+
+	/* If not, do nothing */
+	else {
+		call emit-success( $message = "Nothing to do. Interface already in proper state." );
+	}
+
+}
