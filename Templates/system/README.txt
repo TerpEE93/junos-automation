@@ -12,4 +12,8 @@ config_system template:
     device-specific variables.  However, it doesn't seem that
     there is a YAML library that supports merging of two or
     more documents into a single document.  At least, there's
-    nothing obvious to a non-programmer like me...
+    nothing obvious to a non-programmer like me.
+
+    Update:  I've been told the idea above is best addressed
+    via a tool like Ansible.  I have that loaded now, so I'll
+    start playing with it.
