@@ -220,10 +220,20 @@ template generate-xml() {
 /* modify-config()
  * Here is where we write the config change
  */
-template modify-config($mxl) {
+template modify-config($changed_xml) {
+
+    /* Adding a "commit synchronize force" to account for an issue in Searay
+     * on dual-RE platforms
+     */
+    var $commit-options = {
+        <commit-options> {
+            <synchronize>;
+            <force>;
+        }
+    }
 
     /* Is there a change to make? */
-    if (not($xml == "NULL")) {
+    if (not($changed_xml == "NULL")) {
 
     	/* Open connection with mgd */
     	var $con = jcs:open();
@@ -233,7 +243,7 @@ template modify-config($mxl) {
 
     	/* Use load-configuration() to load and commit the config change */
     	var $results := {
-        	call jcs:load-configuration( $connection = $con, $configuration = $xml );
+        	call jcs:load-configuration( $connection = $con, $configuration = $changed_xml, $commit-options );
     	}
 
     	/* Emit any errors or warnings */
