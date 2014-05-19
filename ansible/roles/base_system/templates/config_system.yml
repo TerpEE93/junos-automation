@@ -10,52 +10,52 @@ groups {
                 encrypted-password {{ root_password_encrypted }};
             }
             name-server {
-            {%- for server in name_servers %}
+{% for server in name_servers %}
                 {{ server }};
-            {%- endfor %}
+{% endfor %}
             }
             radius-server {
-            {%- for server in radius %}
+{% for server in radius %}
                 {{ server.server_ip }} {
                     secret {{ server.secret_encrypted }};
                     source-address {{ mgt_ip }};
                 }
-            {%- endfor %}
+{% endfor %}
             }
             services {
-            {%- for service in local_services %}
-                {%- if service == 'netconf_ssh' %}
+{% for service in local_services %}
+{% if service == 'netconf_ssh' %}
                 netconf {
                     ssh;
                 }
-                {%- else %}
+{% else %}
                 {{ service }};
-                {%- endif %}
-            {%- endfor %}
+{% endif %}
+{% endfor %}
             }
             syslog {
-            {%- for logger in syslog.loggers %}
-                {%- if logger.type == 'user' %}
+{% for logger in syslog.loggers %}
+{% if logger.type == 'user' %}
                 user {{ logger.name }} {
-                {%- elif logger.type == 'file' %}
+{% elif logger.type == 'file' %}
                 file {{ logger.name }} {
-                {%- elif logger.type == 'host' %}
+{% elif logger.type == 'host' %}
                 host {{ logger.name_ip }} {
-                    log-prefix {{ logger.log_prefix }};
-                {%- endif %}
-                {%- for facility in logger.fac_sev %}
+                    log-prefix {{ syslog_prefix }};
+{% endif %}
+{% for facility in logger.fac_sev %}
                     {{ facility }};
-                {%- endfor %}
+{% endfor %}
                 }
-            {%- endfor %}
+{% endfor %}
                 archive size {{ syslog.file_size }} files {{ syslog.num_files }};
                 source-address {{ mgt_ip }};
             }
             ntp {
                 boot-server {{ ntp.boot_server }};
-            {%- for server in ntp.servers %}
+{% for server in ntp.servers %}
                 server {{ server }};
-            {%- endfor %}
+{% endfor %}
                 source-address {{ mgt_ip }};
             }
         }

@@ -1,0 +1,15 @@
+---
+my_host_name:
+    espresso-1
+
+my_domain_name:
+    lab
+
+mgt_ip:
+    192.168.100.15
+
+local_timezone:
+    America/New_York
+
+syslog_prefix:
+    ESPRESSO-1

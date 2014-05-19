@@ -1,0 +1,4 @@
+[switches]
+espresso-1	ansible_ssh_host=192.168.100.15
+espresso-2	ansible_ssh_host=192.168.100.16
+sumatra		ansible_ssh_host=192.168.100.18

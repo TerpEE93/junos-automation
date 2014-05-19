@@ -1,0 +1,15 @@
+---
+my_host_name:
+    sprite
+
+my_domain_name:
+    lab
+
+mgt_ip:
+    192.168.100.25
+
+local_timezone:
+    America/New_York
+
+syslog_prefix:
+    SPRITE

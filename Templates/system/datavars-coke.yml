@@ -1,18 +1,18 @@
 ---
 my_host_name:
-    firewall-srx210
+    coke
 
 my_domain_name:
-    home
+    lab
 
 mgt_ip:
-    192.168.168.1
+    192.168.100.21
 
 local_timezone:
     America/New_York
 
 root_password_encrypted:
-    "$1PutYourEncryptedPasswordHere!"
+    "$1$bLPNN09I$miuAa4ZBoeP3Y7cUYB5LC/"
 
 name_servers:
     - 192.168.168.13
@@ -22,17 +22,13 @@ ntp:
     boot_server: 192.168.168.13
     servers:
         - 192.168.168.13
-    source_ip: 192.168.168.1
 
-admin_user:
-    - name: juniper
-      uid: 2001
-      class: super-user
-      password_encrypted: "$1PutYourEncryptedPasswordHere!"
-    - name: Junos-Space
-      uid: 5000
-      class: super-user
-      password_encrypted: "$1PutYourEncryptedPasswordHere!"
+radius:
+    - server_ip: 192.168.168.13
+      secret_encrypted: "$9$sDYJGTQ36/tgon9puhcKM87VskqfFnCz3"
+
+auth_order:
+    "[ radius password ]"
 
 local_services:
     - ssh
@@ -60,4 +56,3 @@ syslog:
               - "any info"
     file_size: 1m
     num_files: 10
-    source_ip: 192.168.100.1
