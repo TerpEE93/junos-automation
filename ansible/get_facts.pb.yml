@@ -4,9 +4,20 @@
   connection: local
   gather_facts: no
 
+  vars_prompt:
+    - name: "username"
+      prompt: "Enter username"
+      default: "greg"
+    - name: "password"
+      prompt: "Enter password"
+      private: yes
+
   tasks:
     - name: gathering info from device
-      junos_get_facts: host={{ inventory_hostname }} user=greg passwd=juniper123
+      junos_get_facts:
+          host={{ inventory_hostname }}
+          user={{ username }}
+          passwd={{ password }}
       register: junos
     - name: version
       debug: msg={{ junos.facts.version }}
